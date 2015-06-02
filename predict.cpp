@@ -8,7 +8,7 @@
 using namespace std;
 
 // pair of possible outcomes
-pair<int, int> predict_next_rand(const vector<int>& values);
+pair<int, int> predict_glibc_rand(const vector<int>& values);
 
 int main() {
   vector<int> values;
@@ -23,24 +23,39 @@ int main() {
   int first = 0;
   int second = 0;
   for (int i = 0; i < total; ++i) {
-    const auto predictions = predict_next_rand(values);
-    int actual = rand();
+    const auto predictions = predict_glibc_rand(values);
+
+    const int actual = rand();
     cout << "actual: " << actual << " ";
-    cout << "got it? " << (predictions.first == actual || predictions.second == actual);
-    const bool firstWasRight = predictions.first == actual;
-    cout << " 1or2: " << (firstWasRight ? 1 : 2) << endl;
-    if (firstWasRight) ++first;
-    else ++second;
+
+    const bool wasRight = predictions.first == actual ||
+      predictions.second == actual;
+    cout << "got it? " << wasRight;
+
+    if (wasRight) {
+      const bool firstWasRight = predictions.first == actual;
+      cout << " first or second guess: " << (firstWasRight ? 1 : 2);
+
+      if (firstWasRight) ++first;
+      else ++second;
+    }
+    cout << endl;
+
     values.push_back(actual);
   }
 
   cout << "first right : " << first  << endl;
   cout << "second right: " << second << endl;
-  if (total != first + second) cout << "OOPS" << endl;
+  if (total != first + second)
+    cout << "!! Did not always guess right." << endl;
 }
 
 
-pair<int, int> predict_next_rand(const vector<int>& values) {
+/* For glibc's TYPE_1 rand (because by default srand gives a state
+ * of 128 bytes, according to: http://stackoverflow.com/a/25819262/395386)
+ * predicting an additive feedback generator
+ */
+pair<int, int> predict_glibc_rand(const vector<int>& values) {
   // http://www.mathstat.dal.ca/~selinger/random/
 
   if (values.size() < 31) throw invalid_argument("can only predict with >= 31 outputs");
