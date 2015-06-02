@@ -8,9 +8,39 @@
 using namespace std;
 
 // pair of possible outcomes
-pair<int, int> predict_glibc_rand(const vector<int>& values);
+typedef pair<int, int> predictions_t;
+predictions_t predict_glibc_rand(const vector<int>& values);
+
+template <class Predictor>
+void test_predictor(Predictor predictor);
 
 int main() {
+  test_predictor(predict_glibc_rand);
+
+  return 0;
+}
+
+
+/* For glibc's TYPE_1 rand (because by default srand gives a state
+ * of 128 bytes, according to: http://stackoverflow.com/a/25819262/395386)
+ * predicting an additive feedback generator
+ */
+predictions_t predict_glibc_rand(const vector<int>& values) {
+  // http://www.mathstat.dal.ca/~selinger/random/
+
+  if (values.size() < 31) throw invalid_argument("can only predict with >= 31 outputs");
+
+  int o0 = values[values.size() - 31];
+  int o28 = values[values.size() - 3];
+
+  int prediction1 = (o0 + o28) % (1u << 31); // ~75% more likely (http://stackoverflow.com/a/14679656/395386)
+  int prediction2 = (o0 + o28) % (1u << 31) + 1;
+
+  return make_pair(prediction1, prediction2);
+}
+
+template <class Predictor>
+void test_predictor(Predictor predictor) {
   vector<int> values;
   for (int i = 0; i < 31; ++i) {
     int value = rand();
@@ -48,23 +78,4 @@ int main() {
   cout << "second right: " << second << endl;
   if (total != first + second)
     cout << "!! Did not always guess right." << endl;
-}
-
-
-/* For glibc's TYPE_1 rand (because by default srand gives a state
- * of 128 bytes, according to: http://stackoverflow.com/a/25819262/395386)
- * predicting an additive feedback generator
- */
-pair<int, int> predict_glibc_rand(const vector<int>& values) {
-  // http://www.mathstat.dal.ca/~selinger/random/
-
-  if (values.size() < 31) throw invalid_argument("can only predict with >= 31 outputs");
-
-  int o0 = values[values.size() - 31];
-  int o28 = values[values.size() - 3];
-
-  int prediction1 = (o0 + o28) % (1u << 31); // ~75% more likely (http://stackoverflow.com/a/14679656/395386)
-  int prediction2 = (o0 + o28) % (1u << 31) + 1;
-
-  return make_pair(prediction1, prediction2);
 }
