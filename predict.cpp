@@ -8,24 +8,57 @@
 
 using namespace std;
 
-int predict_glibc_rand(const vector<int>& outputs);
+using Outputs = vector<int>;
+using Predictor = int(const Outputs&);
+using RandomGenerator = int();
+using ValueModifier = int(int);
 
-template <class Predictor>
-void test_predictor(const string& testName, Predictor predictor);
+// Generators
+int glibc_rand_type1();
+
+// Value modifiers
+int identity(int x);
+int lower_bits(int x);
+
+// Predictors
+int predict_glibc_rand_type1(const Outputs& outputs);
+
+// Testing functions
+void test_predictor(const string& testName, Predictor predictor,
+    RandomGenerator generator, ValueModifier modifier);
+
+
+
 
 int main() {
-  test_predictor("glibc's TYPE_1 random (default)", predict_glibc_rand);
+  test_predictor("glibc's TYPE_1 random (default)", predict_glibc_rand_type1,
+      glibc_rand_type1, identity);
+
+  // keeping lower bits only will not affect our predictor
+  test_predictor("glibc's TYPE_1 random (default) & 0x0F",
+      predict_glibc_rand_type1, glibc_rand_type1, lower_bits);
 
   return 0;
 }
 
+
+int glibc_rand_type1() {
+  return rand();
+}
+
+int identity(int x) {
+  return x;
+}
+int lower_bits(int x) {
+  return x & 0x0F;
+}
 
 /* Additive feedback generator predictor
  * Predicts with ~75% success
  * Specifically for glibc's TYPE_1 rand (which is the default because by default srand gives a state
  * of 128 bytes to initstate, which gives TYPE_1 random, according to: http://stackoverflow.com/a/25819262/395386)
  */
-int predict_glibc_rand(const vector<int>& outputs) {
+int predict_glibc_rand_type1(const vector<int>& outputs) {
   // info coming from:
   // http://www.mathstat.dal.ca/~selinger/random/
 
@@ -56,33 +89,33 @@ int predict_glibc_rand(const vector<int>& outputs) {
   return prediction1; // pick the most likely
 }
 
-template <class Predictor>
-void test_predictor(const string& testName, Predictor predictor) {
+void test_predictor(const string& testName, Predictor predictor,
+    RandomGenerator generator, ValueModifier modifier) {
   cout << "Predicting output for " << testName << ":" << endl;
 
   const int INITIAL = 31;
+  const int TOTAL_TESTS = 10000 + INITIAL;
+
   vector<int> outputs;
-  for (int i = 0; i < INITIAL; ++i) {
-    int output = rand();
+  int correct_guesses = 0;
+  int guesses = 0;
+
+  for (int i = 0; i < TOTAL_TESTS; ++i) {
+    const int output = modifier(generator());
+
+    if (i >= INITIAL) {
+      const int prediction = modifier(predictor(outputs));
+      const bool was_right = prediction == output;
+
+      correct_guesses += was_right;
+      ++guesses;
+    }
+
     outputs.push_back(output);
   }
 
-
-  const int TOTAL_TESTS = 10000;
-  int correct_guesses = 0;
-  for (int i = 0; i < TOTAL_TESTS; ++i) {
-    const auto prediction = predict_glibc_rand(outputs);
-
-    const int actual = rand();
-    outputs.push_back(actual);
-
-    const bool was_right = prediction == actual;
-
-    correct_guesses += was_right;
-  }
-
-  cout << "Success rate: " << correct_guesses << " / " << TOTAL_TESTS;
-  cout << " (" << (static_cast<float>(correct_guesses)/TOTAL_TESTS) << ")" << endl;
+  cout << "Success rate: " << correct_guesses << " / " << guesses;
+  cout << " (" << (static_cast<float>(correct_guesses)/guesses) << ")" << endl;
 
   cout << endl;
 }
