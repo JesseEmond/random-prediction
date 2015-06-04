@@ -1,5 +1,8 @@
 # random-prediction
 Prediction of the outputs of poor random generators.
+In the hopes that this might save someone's time while learning on the subject.
+I tried to comment the parts that were not completely explicit for me from the links.
+I did not bother to write classes as this was just a quick POC.
 
 Predicts:
 - glibc's random() TYPE_1 (additive feedback generator)
