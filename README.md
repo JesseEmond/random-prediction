@@ -4,6 +4,18 @@ In the hopes that this might save someone's time while learning on the subject.
 I tried to comment the parts that were not completely explicit for me from the links.
 I did not bother to write classes as this was just a quick POC.
 
+Sample output:
+```
+Predicting output for glibc's TYPE_1 random (default):
+Success rate: 7493 / 10000 (0.7493)
+
+Predicting output for glibc's TYPE_1 random (default) & 0x0F:
+Success rate: 7504 / 10000 (0.7504)
+
+Predicting output for linear congruential generator:
+Success rate: 10000 / 10000 (1)
+```
+
 Predicts:
 - glibc's random() TYPE_1 (additive feedback generator)
   - [info about the maths behind](http://www.mathstat.dal.ca/~selinger/random/)
