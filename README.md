@@ -12,3 +12,12 @@ Predicts:
 
 - glibc's random() TYPE_1 (additive feedback generator) last 4 least significant bits
   - higher bits do not influence the future lower bits, so nothing new here
+
+- linear congruential generator
+  - [info about the maths behind](http://www.pcg-random.org/predictability.html)
+
+
+Todo:
+- would be interesting to take a look at predicting Mersenne Twister output
+  - [looks like interesting info](https://jazzy.id.au/2010/09/22/cracking_random_number_generators_part_3.html)
+  - feel free to make a PR if you are interested
