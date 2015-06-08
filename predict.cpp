@@ -5,6 +5,7 @@
 #include <utility>
 #include <stdexcept>
 #include <string>
+#include <cassert>
 
 using namespace std;
 
@@ -28,6 +29,10 @@ int predict_linear_congruential_generator(const Outputs& outputs);
 // Testing functions
 void test_predictor(const string& testName, Predictor predictor,
     RandomGenerator generator, ValueModifier modifier);
+
+// Mathematical functions
+unsigned int egcd(unsigned int a, unsigned int b, int& x, int& y);
+unsigned int mod_inv(unsigned int a, unsigned int m);
 
 
 
@@ -82,8 +87,8 @@ int predict_glibc_rand_type1(const vector<int>& outputs) {
   // generated (equation #4)
   if (outputs.size() < 31) throw invalid_argument("only predicting with >= 31 outputs");
 
-  int o31 = outputs[outputs.size() - 31];
-  int o3 = outputs[outputs.size() - 3];
+  const int o31 = outputs[outputs.size() - 31];
+  const int o3 = outputs[outputs.size() - 3];
 
   // random() will return (state[i-31] + state[i-3])>>1,
   // so we don't get to see the least significant bits (LSB) of the states when
@@ -99,15 +104,49 @@ int predict_glibc_rand_type1(const vector<int>& outputs) {
   // 1 + 1 = (1)1 <- 1/4 probability with uniform distribution
   // Therefore, we can expect the LSBs from states to only affect the resulting
   // LSB of the output 25% of the time.
-  int prediction1 = (o31 + o3) % (1u << 31); // ~75% more likely (http://stackoverflow.com/a/14679656/395386)
-  //int prediction2 = (o31 + o3) % (1u << 31) + 1; // 25% chance
+  const int prediction1 = (o31 + o3) % (1u << 31); // ~75% more likely (http://stackoverflow.com/a/14679656/395386)
+  //const int prediction2 = (o31 + o3) % (1u << 31) + 1; // 25% chance
 
   return prediction1; // pick the most likely
 }
 
 /* Linear congruential generator predictor */
 int predict_linear_congruential_generator(const Outputs& outputs) {
-  return 42;//TODO
+  // view http://www.pcg-random.org/predictability.html for more info
+  // r[n+1] = a r[n] + c
+  //
+  // avec r[0],r[1],r[2]:
+  // r[1] = a r[0] + c mod m
+  // r[2] = a r[1] + c mod m
+  //
+  // r[1] - r[2] = a r[0] + c - (a r[1] + c) mod m
+  //             = a r[0] - a r[1] mod m
+  //             = a (r[0] - r[1]) mod m
+  // =>
+  // a = (r[1] - r[2])/(r[0] - r[1]) mod m
+  //
+  // r[1] = a r[0] + c mod m
+  // r[1] = (r[1] - r[2])/(r[0] - r[1]) r[0] + c mod m
+  // r[1] - r[0] (r[1] - r[2])/(r[0] - r[1]) = c mod m
+  // r[1] - (r[0] r[1] - r[0] r[2]) / (r[0] - r[1]) = c mod m
+  // r[1] (r[0] - r[1])/(r[0] - r[1]) - (r[0] r[1] - r[0] r[2])/(r[0] - r[1]) = c mod m
+  // (r[0] r[1] - r[1]^2 - r[0] r[1] - r[0] r[2])/(r[0] - r[1]) = c mod m
+  // (r[0] r[2] - r[1]^2)/(r[0] - r[1]) = c mod m
+  // =>
+  // c = (r[0] r[2] - r[1]^2)/(r[0] - r[1]) = c mod m
+
+  if (outputs.size() < 3) throw invalid_argument("only predicting with >= 3 outputs");
+
+  const int r2 = outputs[outputs.size() - 1];
+  const int r1 = outputs[outputs.size() - 2];
+  const int r0 = outputs[outputs.size() - 3];
+
+  // simply apply the formulas above
+  const int denominator = mod_inv(r0 - r1, lcg_mod);
+  const int a = ((r1 - r2) * denominator) % lcg_mod;
+  const int c = ((r0 * r2 - r1 * r1) * denominator) % lcg_mod;
+
+  return (a * outputs.back() + c) % lcg_mod;
 }
 
 void test_predictor(const string& testName, Predictor predictor,
@@ -139,4 +178,29 @@ void test_predictor(const string& testName, Predictor predictor,
   cout << " (" << (static_cast<float>(correct_guesses)/guesses) << ")" << endl;
 
   cout << endl;
+}
+
+unsigned int egcd(unsigned int a, unsigned int b, int& x, int& y) {
+  // https://en.wikibooks.org/wiki/Algorithm_Implementation/Mathematics/Extended_Euclidean_algorithm#Modular_inverse
+  int c = 0, d = 1, u = 1, v = 0;
+  while (a != 0) {
+    int q = b / a, r = b % a;
+    int m = c - u * q, n = d - v * q;
+    b = a;
+    a = r;
+    c = u;
+    d = v;
+    u = m;
+    v = n;
+  }
+  x = c;
+  y = d;
+  return b;
+}
+unsigned int mod_inv(unsigned int a, unsigned int m) {
+  // https://en.wikibooks.org/wiki/Algorithm_Implementation/Mathematics/Extended_Euclidean_algorithm#Modular_inverse
+  int x, y;
+  const unsigned int gcd = egcd(a, m, x, y);
+  assert(gcd == 1);
+  return x % m;
 }
