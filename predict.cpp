@@ -15,6 +15,7 @@ using ValueModifier = int(int);
 
 // Generators
 int glibc_rand_type1();
+int linear_congruential_generator();
 
 // Value modifiers
 int identity(int x);
@@ -22,6 +23,7 @@ int lower_bits(int x);
 
 // Predictors
 int predict_glibc_rand_type1(const Outputs& outputs);
+int predict_linear_congruential_generator(const Outputs& outputs);
 
 // Testing functions
 void test_predictor(const string& testName, Predictor predictor,
@@ -38,12 +40,26 @@ int main() {
   test_predictor("glibc's TYPE_1 random (default) & 0x0F",
       predict_glibc_rand_type1, glibc_rand_type1, lower_bits);
 
+  test_predictor("linear congruential generator",
+      predict_linear_congruential_generator, linear_congruential_generator,
+      identity);
+
   return 0;
 }
 
 
 int glibc_rand_type1() {
   return rand();
+}
+
+static unsigned long lcg_next = 1337; // arbitrary seed
+static const unsigned int lcg_mod = (1 << 31);
+int linear_congruential_generator() {
+  // a and c constants taken from: http://pubs.opengroup.org/onlinepubs/009695399/functions/rand.html
+  const unsigned int a = 1103515245;
+  const unsigned int c = 12345;
+  lcg_next = lcg_next * a + c;
+  return static_cast<int>(lcg_next % lcg_mod);
 }
 
 int identity(int x) {
@@ -87,6 +103,11 @@ int predict_glibc_rand_type1(const vector<int>& outputs) {
   //int prediction2 = (o31 + o3) % (1u << 31) + 1; // 25% chance
 
   return prediction1; // pick the most likely
+}
+
+/* Linear congruential generator predictor */
+int predict_linear_congruential_generator(const Outputs& outputs) {
+  return 42;//TODO
 }
 
 void test_predictor(const string& testName, Predictor predictor,
