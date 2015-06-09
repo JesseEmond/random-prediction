@@ -57,10 +57,10 @@ int glibc_rand_type1() {
   return rand();
 }
 
-static unsigned long lcg_next = 1337; // arbitrary seed
 static const unsigned int lcg_mod = (1 << 31);
 int linear_congruential_generator() {
   // a and c constants taken from: http://pubs.opengroup.org/onlinepubs/009695399/functions/rand.html
+  static unsigned long lcg_next = 1337; // arbitrary seed
   const unsigned int a = 1103515245;
   const unsigned int c = 12345;
   lcg_next = lcg_next * a + c;
@@ -115,15 +115,14 @@ int predict_linear_congruential_generator(const Outputs& outputs) {
   // view http://www.pcg-random.org/predictability.html for more info
   // r[n+1] = a r[n] + c
   //
-  // avec r[0],r[1],r[2]:
+  // with r[0],r[1],r[2] (the 3 last results):
   // r[1] = a r[0] + c mod m
   // r[2] = a r[1] + c mod m
   //
   // r[1] - r[2] = a r[0] + c - (a r[1] + c) mod m
   //             = a r[0] - a r[1] mod m
   //             = a (r[0] - r[1]) mod m
-  // =>
-  // a = (r[1] - r[2])/(r[0] - r[1]) mod m
+  // => a = (r[1] - r[2])/(r[0] - r[1]) mod m
   //
   // r[1] = a r[0] + c mod m
   // r[1] = (r[1] - r[2])/(r[0] - r[1]) r[0] + c mod m
@@ -132,8 +131,7 @@ int predict_linear_congruential_generator(const Outputs& outputs) {
   // r[1] (r[0] - r[1])/(r[0] - r[1]) - (r[0] r[1] - r[0] r[2])/(r[0] - r[1]) = c mod m
   // (r[0] r[1] - r[1]^2 - r[0] r[1] - r[0] r[2])/(r[0] - r[1]) = c mod m
   // (r[0] r[2] - r[1]^2)/(r[0] - r[1]) = c mod m
-  // =>
-  // c = (r[0] r[2] - r[1]^2)/(r[0] - r[1]) = c mod m
+  // => c = (r[0] r[2] - r[1]^2)/(r[0] - r[1]) mod m
 
   if (outputs.size() < 3) throw invalid_argument("only predicting with >= 3 outputs");
 
