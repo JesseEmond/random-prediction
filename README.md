@@ -42,4 +42,4 @@ g++ predict.cpp --std=c++11 -o predict
 
 - predict the output of a LCG that only outputs high bits
 
-- see if glibc's TYPE_1 random can be predicted with 100% accuracy (guessing the seed)
+- see if glibc's TYPE_1 random can be predicted with 100% accuracy (finding the seed/the states exact values?)
