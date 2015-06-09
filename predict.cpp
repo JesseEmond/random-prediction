@@ -91,18 +91,18 @@ int predict_glibc_rand_type1(const vector<int>& outputs) {
   const int o3 = outputs[outputs.size() - 3];
 
   // random() will return (state[i-31] + state[i-3])>>1,
-  // so we don't get to see the least significant bits (LSB) of the states when
+  // so we don't get to see the least significant bit (LSB) of the states when
   // we get the outputs. We must therefore guess if the unknown LSBs will influence
   // the LSB of the output or not. Here we care about the *second* least significant
   // bit resulting from the addition of the LSBs, as we will shift the result to the
   // right while returning the output.
-  // Assuming a uniform ditribution of LSBs from previous states, there is only one case out of 4 that will
+  // Assuming a uniform ditribution of LSB from previous states, there is only one case out of 4 that will
   // produce a 1 from the addition of bits:
   // 0 + 0 = (0)0
   // 0 + 1 = (0)1
   // 1 + 0 = (0)1
   // 1 + 1 = (1)1 <- 1/4 probability with uniform distribution
-  // Therefore, we can expect the LSBs from states to only affect the resulting
+  // Therefore, we can expect the LSB from states to only affect the resulting
   // LSB of the output 25% of the time.
   const int prediction1 = (o31 + o3) % (1u << 31); // ~75% more likely (http://stackoverflow.com/a/14679656/395386)
   //const int prediction2 = (o31 + o3) % (1u << 31) + 1; // 25% chance
