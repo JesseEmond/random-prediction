@@ -25,7 +25,7 @@ int linear_congruential_generator();
 // These are modifiers that are applied to the observed generated
 // values. For example, a value modifier could return the 4 least
 // significant bits of an integer.
-// Basically, the generator predictor does the following:
+// Basically, the predictor tester does the following:
 // generated = modifier(generator());
 // ...
 // predicted = modifier(predictor());
