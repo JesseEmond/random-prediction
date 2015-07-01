@@ -14,19 +14,36 @@ using Predictor = int(const Outputs&);
 using RandomGenerator = int();
 using ValueModifier = int(int);
 
-// Generators
+// Random Number Generators
+//
+// These are the generators that we are trying to predict.
 int glibc_rand_type1();
 int linear_congruential_generator();
 
 // Value modifiers
+//
+// These are modifiers that are applied to the observed generated
+// values. For example, a value modifier could return the 4 least
+// significant bits of an integer.
+// Basically, the generator predictor does the following:
+// generated = modifier(generator());
+// ...
+// predicted = modifier(predictor());
 int identity(int x);
 int lower_bits(int x);
 
 // Predictors
+//
+// These are the predictors that take a look at previous values
+// of a specific type of generators and try to predict the next
+// value.
 int predict_glibc_rand_type1(const Outputs& outputs);
 int predict_linear_congruential_generator(const Outputs& outputs);
 
 // Testing functions
+//
+// These are used to run a predictor against
+// a generator and output how well the predictor did.
 void test_predictor(const string& testName, Predictor predictor,
     RandomGenerator generator, ValueModifier modifier);
 
