@@ -35,11 +35,10 @@ g++ predict.cpp --std=c++11 -o predict
   - [info about the maths behind](http://www.pcg-random.org/predictability.html)
 
 
-## Ideas
-- would be interesting to take a look at predicting Mersenne Twister output
-  - [looks like interesting info](https://jazzy.id.au/2010/09/22/cracking_random_number_generators_part_3.html)
-  - feel free to make a PR if you are interested
+## Notes
+See [Challenge 23](https://github.com/JesseEmond/matasano-cryptopals/blob/master/src/23.py) of [my solutions](https://github.com/JesseEmond/matasano-cryptopals) to the [Matasano Cryptopals](http://cryptopals.com/) challenges to clone a Mersenne Twister generator from 624 numbers of output.
 
+## Ideas
 - predict the output of a LCG that only outputs high bits
 
 - see if glibc's TYPE_1 random can be predicted with 100% accuracy (finding the seed/the states exact values?)
